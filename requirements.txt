@@ -1,0 +1,7 @@
+gsw
+numpy
+xarray
+matplotlib
+pandas
+scipy
+
