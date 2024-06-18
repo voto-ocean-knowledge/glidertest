@@ -4,4 +4,7 @@ xarray
 matplotlib
 pandas
 scipy
-
+pooch
+netcdf4
+pooch
+xarray
