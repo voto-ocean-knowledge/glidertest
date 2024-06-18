@@ -6,5 +6,4 @@ pandas
 scipy
 pooch
 netcdf4
-pooch
 
