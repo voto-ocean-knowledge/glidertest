@@ -5,6 +5,10 @@ import seaborn as sns
 from scipy import stats
 from cmocean import cm as cmo
 import matplotlib.pyplot as plt
+from pandas import DataFrame
+from skyfield import api
+from skyfield import almanac
+from tqdm import tqdm
 
 
 def grid2d(x, y, v, xi=1, yi=1):
@@ -159,3 +163,138 @@ def chl_first_check(ds):
     else:
         print(
             'Data from the deepest 10% of data has been analysed and data seems stable. These deep values can be used to re-assess the dark count if the no chlorophyll at depth assumption is valid in this site and this depth')
+def sunset_sunrise(time, lat, lon):
+
+
+    ts = api.load.timescale()
+    eph = api.load("de421.bsp")
+
+    df = DataFrame.from_dict(dict([("time", time), ("lat", lat), ("lon", lon)]))
+
+    # set days as index
+    df = df.set_index(df.time.values.astype("datetime64[D]"))
+
+    # groupby days and find sunrise for unique days
+    # groupby days and find sunrise/sunset for unique days
+    grp_avg = df.groupby(df.index).mean(numeric_only=False)
+    date = grp_avg.index.to_pydatetime()
+    date = grp_avg.index
+
+    time_utc = ts.utc(date.year, date.month, date.day, date.hour)
+    time_utc_offset = ts.utc(
+        date.year, date.month, date.day + 1, date.hour
+    )  # add one day for each unique day to compute sunrise and sunset pairs
+
+    bluffton = []
+    for i in range(len(grp_avg.lat)):
+        bluffton.append(api.wgs84.latlon(grp_avg.lat[i], grp_avg.lon[i]))
+    bluffton = np.array(bluffton)
+
+    sunrise = []
+    sunset = []
+    for n in tqdm(range(len(bluffton))):
+
+        f = almanac.sunrise_sunset(eph, bluffton[n])
+        t, y = almanac.find_discrete(time_utc[n], time_utc_offset[n], f)
+
+        if not t:
+            if f(time_utc[n]):  # polar day
+                sunrise.append(
+                    pd.Timestamp(
+                        date[n].year, date[n].month, date[n].day, 0, 1
+                    ).to_datetime64()
+                )
+                sunset.append(
+                    pd.Timestamp(
+                        date[n].year, date[n].month, date[n].day, 23, 59
+                    ).to_datetime64()
+                )
+            else:  # polar night
+                sunrise.append(
+                    pd.Timestamp(
+                        date[n].year, date[n].month, date[n].day, 11, 59
+                    ).to_datetime64()
+                )
+                sunset.append(
+                    pd.Timestamp(
+                        date[n].year, date[n].month, date[n].day, 12, 1
+                    ).to_datetime64()
+                )
+
+        else:
+            sr = t[y == 1]  # y=1 sunrise
+            sn = t[y == 0]  # y=0 sunset
+
+            sunup = pd.to_datetime(sr.utc_iso()).tz_localize(None)
+            sundown = pd.to_datetime(sn.utc_iso()).tz_localize(None)
+
+            # this doesnt look very efficient at the moment, but I was having issues with getting the datetime64
+            # to be compatible with the above code to handle polar day and polar night
+
+            su = pd.Timestamp(
+                sunup.year[0],
+                sunup.month[0],
+                sunup.day[0],
+                sunup.hour[0],
+                sunup.minute[0],
+            ).to_datetime64()
+
+            sd = pd.Timestamp(
+                sundown.year[0],
+                sundown.month[0],
+                sundown.day[0],
+                sundown.hour[0],
+                sundown.minute[0],
+            ).to_datetime64()
+
+            sunrise.append(su)
+            sunset.append(sd)
+
+    sunrise = np.array(sunrise).squeeze()
+    sunset = np.array(sunset).squeeze()
+
+    grp_avg["sunrise"] = sunrise
+    grp_avg["sunset"] = sunset
+
+    # reindex days to original dataframe as night
+    df_reidx = grp_avg.reindex(df.index)
+    sunrise, sunset = df_reidx[["sunrise", "sunset"]].values.T
+
+    return sunrise, sunset
+
+
+def test_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_time='2024-04-20', sel_day=6):
+    ds = ds.set_xindex('TIME')
+    ds_sel = ds.sel(TIME=slice(start_time, end_time))
+    sunrise, sunset = sunset_sunrise(ds_sel.TIME, ds_sel.LATITUDE, ds_sel.LONGITUDE)
+
+    # creating quenching correction batches, where a batch is a night and the following day
+    day = (ds_sel.TIME > (sunrise + offset)) & (ds_sel.TIME < (sunset + offset))
+    # find day and night transitions
+    daynight_transitions = np.abs(np.diff(day.astype(int)))
+    # get the cumulative sum of daynight to generate separate batches for day and night
+    daynight_batches = daynight_transitions.cumsum()
+    batch = np.r_[0, (daynight_batches) // 2]
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8), sharex='all')
+    c = ax.scatter(ds_sel.TIME, ds_sel.DEPTH, c=ds_sel.CHLA, s=10, vmin=np.nanpercentile(ds_sel.CHLA, 0.5),
+                   vmax=np.nanpercentile(ds_sel.CHLA, 99.5))
+    ax.set_ylim(30, -2)
+    for n in np.unique(sunset):
+        ax.axvline(np.unique(n), c='blue')
+    for m in np.unique(sunrise):
+        ax.axvline(np.unique(m), c='orange')
+    ax.set_ylabel('Depth [m]')
+    plt.colorbar(c, label='Chlorophyll [mg m-3]')
+    df = pd.DataFrame(np.c_[ds_sel['CHLA'], day, batch, ds_sel['DEPTH']], columns=['flr', 'day', 'batch', 'depth'])
+    ave = df.flr.groupby([df.day, df.batch, np.around(df.depth)]).mean()
+    day_av = ave[1]
+    night_av = ave[0]
+    fig, ax = plt.subplots(1, 1, figsize=(5, 5), sharex='all')
+
+    ax.plot(night_av[sel_day], night_av[sel_day].index, label='Night time average')
+    ax.plot(day_av[sel_day], day_av[sel_day].index, label='Daytime average')
+    ax.legend()
+    ax.invert_yaxis()
+    ax.set(xlabel='Chlorophyll [mg m-3]', ylabel='Depth [m]')
+    ax.set_title(str(ds_sel.TIME.where(batch == sel_day).dropna(dim='N_MEASUREMENTS')[-1].values)[:10])
