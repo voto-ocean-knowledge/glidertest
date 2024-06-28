@@ -164,7 +164,32 @@ def chl_first_check(ds):
         print(
             'Data from the deepest 10% of data has been analysed and data seems stable. These deep values can be used to re-assess the dark count if the no chlorophyll at depth assumption is valid in this site and this depth')
 def sunset_sunrise(time, lat, lon):
+     """
+    Calculates the local sunrise/sunset of the glider location from GliderTools.
 
+    The function uses the Skyfield package to calculate the sunrise and sunset
+    times using the date, latitude and longitude. The times are returned
+    rather than day or night indices, as it is more flexible for the quenching
+    correction.
+
+
+    Parameters
+    ----------
+    time: numpy.ndarray or pandas.Series
+        The date & time array in a numpy.datetime64 format.
+    lat: numpy.ndarray or pandas.Series
+        The latitude of the glider position.
+    lon: numpy.ndarray or pandas.Series
+        The longitude of the glider position.
+
+    Returns
+    -------
+    sunrise: numpy.ndarray
+        An array of the sunrise times.
+    sunset: numpy.ndarray
+        An array of the sunset times.
+
+    """
 
     ts = api.load.timescale()
     eph = api.load("de421.bsp")
@@ -174,10 +199,8 @@ def sunset_sunrise(time, lat, lon):
     # set days as index
     df = df.set_index(df.time.values.astype("datetime64[D]"))
 
-    # groupby days and find sunrise for unique days
     # groupby days and find sunrise/sunset for unique days
     grp_avg = df.groupby(df.index).mean(numeric_only=False)
-    date = grp_avg.index.to_pydatetime()
     date = grp_avg.index
 
     time_utc = ts.utc(date.year, date.month, date.day, date.hour)
@@ -264,7 +287,33 @@ def sunset_sunrise(time, lat, lon):
 
 
 def test_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_time='2024-04-20', sel_day=6):
-    ds = ds.set_xindex('TIME')
+     """
+    Calculates day and night chlorophyll averages to check if data is affected by NPQ.
+
+    We separate day and night using the GliderTools sunset/sunrise function. 
+    We plot a section of chlorophyll for a selected slice of data to observe any NPQ effetcs.
+    We then plot the day and night average for a specific day for a more detailed view.
+
+
+    Parameters
+    ----------
+    ds: xarray on OG1 format containing at least time, depth, latitude, longitude and chlorophyll. 
+        Data should not be gridded.
+    offset: The delayed onset and recovery of quenching in hours.
+    start_time: Start date of the data selection. As missions can be long and came make it hard to visualise NPQ effetc, 
+                we reccomend selecting small section of few days to few weeks.
+    end_time: End date of the data selection. As missions can be long and came make it hard to visualise NPQ effetc, 
+                we reccomend selecting small section of few days to few weeks.
+    sel_day: Selected day (int) for the detailed plot comparing day and night averages. 
+             The integer value refers to the first, second, third day etc. of the slected time period.
+
+    Returns
+    -------
+    Two plots: a chlorphyll section and a comparison of day and night average chlorphyll over depth for the selcted day
+
+    """
+    
+    
     ds_sel = ds.sel(TIME=slice(start_time, end_time))
     sunrise, sunset = sunset_sunrise(ds_sel.TIME, ds_sel.LATITUDE, ds_sel.LONGITUDE)
 
@@ -286,6 +335,8 @@ def test_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_tim
         ax.axvline(np.unique(m), c='orange')
     ax.set_ylabel('Depth [m]')
     plt.colorbar(c, label='Chlorophyll [mg m-3]')
+    
+    # Create day and night avergaes to then have easy to plot
     df = pd.DataFrame(np.c_[ds_sel['CHLA'], day, batch, ds_sel['DEPTH']], columns=['flr', 'day', 'batch', 'depth'])
     ave = df.flr.groupby([df.day, df.batch, np.around(df.depth)]).mean()
     day_av = ave[1]
