@@ -166,6 +166,7 @@ def chl_first_check(ds):
 def sunset_sunrise(time, lat, lon):
      """
     Calculates the local sunrise/sunset of the glider location from GliderTools.
+    [https://github.com/GliderToolsCommunity/GliderTools/blob/master/glidertools/optics.py]
 
     The function uses the Skyfield package to calculate the sunrise and sunset
     times using the date, latitude and longitude. The times are returned
@@ -286,7 +287,7 @@ def sunset_sunrise(time, lat, lon):
     return sunrise, sunset
 
 
-def test_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_time='2024-04-20', sel_day=6):
+def check_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_time='2024-04-20', sel_day=6):
      """
     Calculates day and night chlorophyll averages to check if data is affected by NPQ.
 
