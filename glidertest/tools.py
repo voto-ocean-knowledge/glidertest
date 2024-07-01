@@ -313,8 +313,8 @@ def check_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_ti
     Two plots: a chlorphyll section and a comparison of day and night average chlorphyll over depth for the selcted day
 
     """
-    
-    
+    if not "TIME" in ds.indexes.keys():
+        ds = ds.set_xindex('TIME')
     ds_sel = ds.sel(TIME=slice(start_time, end_time))
     sunrise, sunset = sunset_sunrise(ds_sel.TIME, ds_sel.LATITUDE, ds_sel.LONGITUDE)
 
