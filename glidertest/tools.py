@@ -348,5 +348,6 @@ def check_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_ti
     ax.plot(day_av[sel_day], day_av[sel_day].index, label='Daytime average')
     ax.legend()
     ax.invert_yaxis()
+    ax.grid()
     ax.set(xlabel='Chlorophyll [mg m-3]', ylabel='Depth [m]')
     ax.set_title(str(ds_sel.TIME.where(batch == sel_day).dropna(dim='N_MEASUREMENTS')[-1].values)[:10])
