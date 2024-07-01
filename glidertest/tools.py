@@ -164,7 +164,7 @@ def chl_first_check(ds):
         print(
             'Data from the deepest 10% of data has been analysed and data seems stable. These deep values can be used to re-assess the dark count if the no chlorophyll at depth assumption is valid in this site and this depth')
 def sunset_sunrise(time, lat, lon):
-     """
+    """
     Calculates the local sunrise/sunset of the glider location from GliderTools.
     [https://github.com/GliderToolsCommunity/GliderTools/blob/master/glidertools/optics.py]
 
@@ -288,7 +288,7 @@ def sunset_sunrise(time, lat, lon):
 
 
 def check_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_time='2024-04-20', sel_day=6):
-     """
+    """
     Calculates day and night chlorophyll averages to check if data is affected by NPQ.
 
     We separate day and night using the GliderTools sunset/sunrise function. 
@@ -348,5 +348,6 @@ def check_npq(ds, offset=np.timedelta64(1, "h"), start_time='2024-04-18', end_ti
     ax.plot(day_av[sel_day], day_av[sel_day].index, label='Daytime average')
     ax.legend()
     ax.invert_yaxis()
+    ax.grid()
     ax.set(xlabel='Chlorophyll [mg m-3]', ylabel='Depth [m]')
     ax.set_title(str(ds_sel.TIME.where(batch == sel_day).dropna(dim='N_MEASUREMENTS')[-1].values)[:10])
