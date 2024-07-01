@@ -9,3 +9,4 @@ scipy
 cmocean 
 skyfield 
 tqdm
+gsw
