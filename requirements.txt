@@ -1,9 +1,11 @@
 gsw
 numpy
 xarray
+numpy
 matplotlib
-pandas
-scipy
-pooch
-netcdf4
-
+pandas  
+seaborn 
+scipy 
+cmocean 
+skyfield 
+tqdm
