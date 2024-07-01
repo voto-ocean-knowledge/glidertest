@@ -1,5 +1,5 @@
-gsw
-numpy
+netcdf4
+pooch
 xarray
 numpy
 matplotlib
@@ -9,3 +9,4 @@ scipy
 cmocean 
 skyfield 
 tqdm
+gsw
