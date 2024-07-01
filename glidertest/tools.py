@@ -156,7 +156,7 @@ def chl_first_check(ds):
     ax.set(ylim=(np.nanpercentile(bottom_chl_data, 0.1), np.nanpercentile(bottom_chl_data, 99.9)),
            xlabel='Measurements',
            ylabel='Chla')
-    plt.show()
+
     if slope >= 0.00001:
         print(
             'Data from the deepest 10% of data has been analysed and data does not seem stable. An alternative solution for dark counts has to be considered. \nMoreover, it is recommended to check the sensor has this may suggest issues with the sensor (i.e water inside the sensor, temporal drift etc)')
