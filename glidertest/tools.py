@@ -518,3 +518,57 @@ def check_temporal_drift(ds: xr.Dataset, var: str,ax: plt.Axes = None, **kw: dic
     [a.grid() for a in ax]
     plt.colorbar(c, format=DateFormatter('%b %d'))
     return fig, ax
+def check_monotony(ds):
+    """
+    This function check weather the selecetd variable over the mission is monotonically increasing or not. This is developed in particular for profile number.
+    If the profile number is not monotonically increasing, this may mean that whatever fucntion was used to assign the profile number may have misassigned some points.
+    
+    Parameters
+    ----------
+    ds: xarray.DataArray on OG1 format. Data should not be gridded.
+
+    Returns
+    -------
+    It will print a sentence stating wheather data is 
+
+    """
+    if pd.Series(ds).is_monotonic_increasing == False:
+        print(f'{ds.name} is not always monotonically increasing')
+    else:
+        print (f'{ds.name} is always monotonically increasing')
+
+def plot_profIncrease(ds: xr.DataArray,ax: plt.Axes = None, **kw: dict,)-> tuple({plt.Figure, plt.Axes}):
+
+    if ax is None:
+        fig, ax = plt.subplots(2,1,figsize=(10, 5), sharex=True)
+    else:
+        fig = plt.gcf()    
+    """
+    This function can be used to plot the profile number and check for any possible issues with the profile index assigned.
+    
+    Parameters
+    ----------
+    ds: xarray in OG1 format with at least PROFILE_NUMBER, TIME, DEPTH. Data should not be gridded 
+    axis: axis to plot the data         
+    
+    Returns
+    -------
+    Two plots, one line plot with the profile number over time (expected to be always increasing). A second plot which is a scatter plot showing 
+    at which depth over time there was a profile index where the difference was neither 0 or 1 (meaning there are possibly issues with how the 
+    profile index was assigned)
+
+    """    
+    ax[0].plot(ds.TIME,ds.PROFILE_NUMBER)
+    ax[0].set(ylabel='Profile_Number')
+    if len(np.where((np.diff(ds.PROFILE_NUMBER) !=0) & (np.diff(ds.PROFILE_NUMBER) !=1 ))[0]) == 0:
+         ax[1].text(0.2, 0.5, 'Data in monotonically increasing and no issues can be observed',transform=ax[1].transAxes )
+    else: 
+        ax[1].scatter(ds.TIME[np.where((np.diff(ds.PROFILE_NUMBER) !=0) & (np.diff(ds.PROFILE_NUMBER) !=1 ))], 
+                  ds.DEPTH[np.where((np.diff(ds.PROFILE_NUMBER) !=0) & (np.diff(ds.PROFILE_NUMBER) !=1 ))],
+                  s=10, c='red', label = 'Depth at which we have issues \n with the profile number assigned')
+    ax[1].set(ylabel='Depth')
+    ax[1].invert_yaxis()
+    ax[1].legend()
+    ax[1].xaxis.set_major_locator(plt.MaxNLocator(8))
+    [a.grid() for a in ax]
+    return fig, ax
