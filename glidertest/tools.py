@@ -74,8 +74,7 @@ def updown_bias(ds, var='PSAL', v_res=1):
     return df
 
 
-def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple[{plt.Figure, plt.Axes}]:
-
+def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot the up and downcast differences computed with the updown_bias function
     
@@ -441,7 +440,7 @@ def day_night_avg(ds, sel_var='CHLA', start_time='2024-04-18', end_time='2024-04
 
 
 def plot_daynight_avg(day: pd.DataFrame, night: pd.DataFrame, ax: plt.Axes = None, sel_day='2023-09-09',
-                      xlabel='Chlorophyll [mg m-3]', **kw: dict, ) -> tuple[{plt.Figure, plt.Axes}]:
+                      xlabel='Chlorophyll [mg m-3]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot the day and night averages computed with the day_night_avg function
     
@@ -475,7 +474,7 @@ def plot_daynight_avg(day: pd.DataFrame, night: pd.DataFrame, ax: plt.Axes = Non
 
 
 def plot_section_with_srss(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_time='2023-09-06',
-                           end_time='2023-09-10', ylim=45, **kw: dict, ) -> tuple[{plt.Figure, plt.Axes}]:
+                           end_time='2023-09-10', ylim=45, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot sections for any variable with the sunrise and sunset plotted over
     
@@ -515,7 +514,7 @@ def plot_section_with_srss(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, st
     return fig, ax
 
 
-def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: dict, ) -> tuple[{plt.Figure, plt.Axes}]:
+def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     if ax is None:
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     else:
@@ -554,7 +553,7 @@ def check_monotony(da):
         print(f'{da.name} is always monotonically increasing')
 
 
-def plot_profIncrease(ds: xr.DataArray, ax: plt.Axes = None, **kw: dict, ) -> tuple[{plt.Figure, plt.Axes}]:
+def plot_profIncrease(ds: xr.DataArray, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot the profile number and check for any possible issues with the profile index assigned.
 
