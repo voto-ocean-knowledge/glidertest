@@ -38,3 +38,8 @@ def test_temporal_drift():
         tools.check_temporal_drift(ds,'DOXY', ax)
     if 'CHLA' in ds.variables:
         tools.check_temporal_drift(ds,'CHLA')
+        
+def test_profile_check():
+    ds = fetchers.load_sample_dataset()
+    tools.check_monotony(ds.PROFILE_NUMBER)
+    tools.plot_profIncrease(ds)
