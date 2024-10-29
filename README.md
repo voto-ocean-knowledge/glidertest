@@ -4,8 +4,7 @@ This is a repo to diagnose issues in glider data such as CTD thermal lag.
 
 This is a work in progress, all contributions welcome!
 
-
-### Usage
+### Instal
 
 Install from PyPI with
 
@@ -20,6 +19,10 @@ pip install -r requirements-dev.txt
 pip install -e . 
 ```
 This installs glidertest locally. -e ensures that any edits you make in the files will be picked up by scripts that import functions from glidertest.
+
+### Documentation
+
+Documentation website at [https://callumrollo.github.io/glidertest/](https://callumrollo.github.io/glidertest/)
 
 Check out the example notebook `notebooks/demo.ipynb` for example functionality
 
