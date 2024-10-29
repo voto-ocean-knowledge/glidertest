@@ -12,3 +12,7 @@ skyfield
 tqdm
 jupyterlab
 pytest
+nbsphinx
+nbconvert
+sphinx
+sphinx-rtd-theme
