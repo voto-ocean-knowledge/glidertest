@@ -12,6 +12,8 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: checkout
@@ -45,9 +47,11 @@ jobs:
         popd
 
     - name: Deploy
+
       if: success() && github.event_name == 'release'
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs/build/html
+
 
