@@ -16,3 +16,4 @@ nbsphinx
 nbconvert
 sphinx
 sphinx-rtd-theme
+cartopy
