@@ -66,14 +66,19 @@ def updown_bias(ds, var='PSAL', v_res=1):
     """
     p = 1  # Horizontal resolution
     z = v_res  # Vertical resolution
-    varG, profG, depthG = grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
+    if var in ds.variables:
+        varG, profG, depthG = grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
 
-    grad = np.diff(varG, axis=0)  # Horizontal gradients
+        grad = np.diff(varG, axis=0)  # Horizontal gradients
 
-    dc = np.nanmean(grad[0::2, :], axis=0)  # Dive - CLimb
-    cd = np.nanmean(grad[1::2, :], axis=0)  # Climb - Dive
+        dc = np.nanmean(grad[0::2, :], axis=0)  # Dive - CLimb
+        cd = np.nanmean(grad[1::2, :], axis=0)  # Climb - Dive
 
-    df = pd.DataFrame(data={'dc': dc, 'cd': cd, 'depth': depthG[0, :]})
+        df = pd.DataFrame(data={'dc': dc, 'cd': cd, 'depth': depthG[0, :]})
+    else:
+        print(f'{var} is not in the dataset')
+        df = pd.DataFrame()
+
     return df
 
 
@@ -96,13 +101,17 @@ def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature 
     else:
         fig = plt.gcf()
 
-    ax.plot(df.dc, df.depth, label='Dive-Climb')
-    ax.plot(df.cd, df.depth, label='Climb-Dive')
-    ax.legend(loc=3)
-    lims = np.abs(df.dc)
-    ax.set_xlim(-np.nanpercentile(lims, 99.5), np.nanpercentile(lims, 99.5))
+    if not all(hasattr(df, attr) for attr in ['dc', 'depth']):
+        ax.text(0.5, 0.55, xlabel, va='center', ha='center', transform=ax.transAxes, bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+        ax.text(0.5, 0.45, 'data unavailable', va='center', ha='center', transform=ax.transAxes, bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+    else:
+        ax.plot(df.dc, df.depth, label='Dive-Climb')
+        ax.plot(df.cd, df.depth, label='Climb-Dive')
+        ax.legend(loc=3)
+        lims = np.abs(df.dc)
+        ax.set_xlim(-np.nanpercentile(lims, 99.5), np.nanpercentile(lims, 99.5))
+        ax.set_ylim(df.depth.max() + 1, -df.depth.max() / 30)
     ax.set_xlabel(xlabel)
-    ax.set_ylim(df.depth.max() + 10, -df.depth.max() / 30)
     ax.grid()
     return fig, ax
 
@@ -139,6 +148,13 @@ def plot_basic_vars(ds, v_res=1, start_prof=0, end_prof=-1):
     z = v_res
     tempG, profG, depthG = grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z)
     salG, profG, depthG = grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z)
+
+    if 'DENSITY' not in ds.variables:
+        ds['DENSITY'] = (('N_MEASUREMENTS'), np.full(ds.dims['N_MEASUREMENTS'], np.nan))
+        SA = gsw.SA_from_SP(ds.PSAL, ds.DEPTH, ds.LONGITUDE, ds.LATITUDE)
+        CT = gsw.CT_from_t(SA, ds.TEMP, ds.DEPTH)
+        ds['DENSITY'] = gsw.rho(SA, CT, ds.DEPTH)
+
     denG, profG, depthG = grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z)
 
     tempG = tempG[start_prof:end_prof, :]
@@ -523,16 +539,19 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
     else:
         fig = plt.gcf()
 
-    ax[0].scatter(mdates.date2num(ds.TIME), ds[var], s=10)
-    ax[0].xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
-    ax[0].set(ylim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel=var)
+    if var not in ds.variables:
+        print(f'{var} does not exist in the dataset. Make sure the spelling is correct or add this variable to your dataset')
+    else:
+        ax[0].scatter(mdates.date2num(ds.TIME), ds[var], s=10)
+        ax[0].xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
+        ax[0].set(ylim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel=var)
 
-    c = ax[1].scatter(ds[var], ds.DEPTH, c=mdates.date2num(ds.TIME), s=10)
-    ax[1].set(xlim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel='Depth (m)', xlabel=var)
-    ax[1].invert_yaxis()
+        c = ax[1].scatter(ds[var], ds.DEPTH, c=mdates.date2num(ds.TIME), s=10)
+        ax[1].set(xlim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel='Depth (m)', xlabel=var)
+        ax[1].invert_yaxis()
 
-    [a.grid() for a in ax]
-    plt.colorbar(c, format=DateFormatter('%b %d'))
+        [a.grid() for a in ax]
+        plt.colorbar(c, format=DateFormatter('%b %d'))
     return fig, ax
 
 
