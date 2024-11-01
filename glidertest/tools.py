@@ -16,6 +16,23 @@ import gsw
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
+
+def _necessary_variables_check(ds: xr.Dataset, vars: list):
+    """Checks that all of a list of variables are present in a dataset
+
+    Args:
+        ds (xarray.Dataset): _description_
+        vars (list): _description_
+
+    Raises:
+        KeyError: Raises an error if all vars not present in ds
+    """
+    missing_vars = set(vars).difference(set(ds.variables))
+    if missing_vars:
+        msg = f"Required variables {list(missing_vars)} do not exist in the suppllied dataset."
+        raise KeyError(msg)
+    
+
 def grid2d(x, y, v, xi=1, yi=1):
     """
     Function to grid data
@@ -65,6 +82,7 @@ def updown_bias(ds, var='PSAL', v_res=1):
     df: pandas dataframe containing dc (Dive - Climb average), cd (Climb - Dive average) and depth
 
     """
+    _necessary_variables_check(ds, ['PROFILE_NUMBER', 'DEPTH', var])
     p = 1  # Horizontal resolution
     z = v_res  # Vertical resolution
     if var in ds.variables:
@@ -145,6 +163,7 @@ def plot_basic_vars(ds, v_res=1, start_prof=0, end_prof=-1):
     Line plots for the averages of the different variables. 
     Thermo, halo and pycnocline are computed and plotted. A sentence stating the depth of the clines is printed too
     """
+    _necessary_variables_check(ds, ['PROFILE_NUMBER', 'DEPTH', 'TEMP', 'PSAL'])
     p = 1
     z = v_res
     tempG, profG, depthG = grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z)
@@ -228,10 +247,7 @@ def optics_first_check(ds, var='CHLA'):
     Function to assess any drift in deep optics data and the presence of any possible negative data
     This function returns plots and text
     """
-    if var not in ds.variables:
-        print(
-            f"{var} does not exist in the dataset. Make sure the spelling is correct or add this variable to your dataset")
-        return
+    _necessary_variables_check(ds, [var, 'TIME', 'DEPTH'])
     # Check how much negative data there is
     neg_chl = np.round((len(np.where(ds[var] < 0)[0]) * 100) / len(ds[var]), 1)
     if neg_chl > 0:
@@ -434,6 +450,7 @@ def day_night_avg(ds, sel_var='CHLA', start_time=None, end_time=None, start_prof
             day: Actual date for the batch 
 
     """
+    _necessary_variables_check(ds, ['TIME', sel_var, 'DEPTH'])
     if "TIME" not in ds.indexes.keys():
         ds = ds.set_xindex('TIME')
 
@@ -531,6 +548,7 @@ def plot_section_with_srss(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, st
     -------
     A section showing the variability of the selected data over time and depth
     """
+    _necessary_variables_check(ds, ['TIME', sel_var, 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 5))
     else:
@@ -570,6 +588,7 @@ def plot_section_with_srss(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, st
 
 
 def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
+    _necessary_variables_check(ds, ['TIME', var, 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     else:
@@ -628,6 +647,7 @@ def plot_profIncrease(ds: xr.DataArray, ax: plt.Axes = None, **kw: dict, ) -> tu
     difference was neither 0 nor 1 (meaning there are possibly issues with how the profile index was assigned)
 
     """
+    _necessary_variables_check(ds, ['TIME', 'PROFILE_NUMBER', 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
     else:
@@ -666,6 +686,7 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     fig: matplotlib.figure.Figure
     ax: matplotlib.axes._subplots.AxesSubplot
     """
+    _necessary_variables_check(ds, ['TIME', 'LONGITUDE', 'LATITUDE'])
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={'projection': ccrs.PlateCarree()})
     else:
@@ -725,6 +746,7 @@ def plot_grid_spacing_histograms(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict
     fig: matplotlib.figure.Figure
     ax: matplotlib.axes._subplots.AxesSubplot
     """
+    _necessary_variables_check(ds, ['TIME', 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     else:
@@ -800,6 +822,7 @@ def plot_ts_histograms(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple
     fig: matplotlib.figure.Figure
     ax: matplotlib.axes._subplots.AxesSubplot
     """
+    _necessary_variables_check(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
 
     if ax is None:
         fig, ax = plt.subplots(1, 3, figsize=(18, 6))
