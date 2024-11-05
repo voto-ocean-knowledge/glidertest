@@ -10,6 +10,7 @@ data_source_og = pooch.create(
         "sea045_20230530T0832_delayed.nc": "sha256:9a97b5b212e9ad751909e175bc01fdc75fd7b7fd784cc59d8e9f29e8bdfb829f",
         "sg015_20050213T230253_delayed.nc": "sha256:ca64e33e9f317e1fc3442e74485a9bf5bb1b4a81b5728e9978847b436e0586ab",
         "sg014_20040924T182454_delayed.nc": "sha256:c9fca08ce676573224c04512f4d5bfe251d0419478ee433dfefa03aa70e2eb9a",
+        "sg014_20040924T182454_delayed_subset.nc": "sha256:0e97a4107364d27364d076ed8007f08c891b2015b439cf524a44612de0a1a2ea",
     },
 )
 
