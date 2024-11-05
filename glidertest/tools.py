@@ -1119,7 +1119,7 @@ def ramsey_binavg(ds, var='VERT_CURR', zgrid=None, dz=None):
     # Calculate depth from pressure using gsw
     if 'DEPTH_Z' in ds:
         depth = ds.DEPTH_Z.values
-    elif:
+    elif 'DEPTH_Z' not in ds:
         latmean = np.nanmean(ds.LATITUDE)
         depth = gsw.z_from_p(press, lat=latmean)  # Assuming latitude is 0, adjust as necessary
     else: 
