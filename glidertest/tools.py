@@ -140,6 +140,7 @@ def find_cline(var, depth_array):
     Find the depth of the maximum vertical difference for a specified variables
     Input data has to be gridded
     """
+    _necessary_variables_check(ds, [var])
     clin = np.where(np.abs(np.diff(np.nanmean(var, axis=0))) == np.nanmax(np.abs(np.diff(np.nanmean(var, axis=0)))))
     return np.round(depth_array[0, clin[0]], 1)
 
@@ -163,7 +164,7 @@ def plot_basic_vars(ds, v_res=1, start_prof=0, end_prof=-1):
     Line plots for the averages of the different variables. 
     Thermo, halo and pycnocline are computed and plotted. A sentence stating the depth of the clines is printed too
     """
-    _necessary_variables_check(ds, ['PROFILE_NUMBER', 'DEPTH', 'TEMP', 'PSAL'])
+    _necessary_variables_check(ds, ['PROFILE_NUMBER', 'DEPTH', 'TEMP', 'PSAL', 'LATITUDE', 'LONGITUDE'])
     p = 1
     z = v_res
     tempG, profG, depthG = grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z)
@@ -929,6 +930,7 @@ def calc_glider_w_from_depth(ds):
     ds (xarray.Dataset): Containing the new variable
     - GLIDER_VERT_VELO_DZDT (array-like): with vertical velocities calculated from dz/dt
     """
+    _necessary_variables_check(ds, ['TIME'])
     # Ensure inputs are numpy arrays
     time = ds.TIME.values
     if 'DEPTH_Z' not in ds.variables and all(var in ds.variables for var in ['PRES', 'LATITUDE', 'LONGITUDE']):
@@ -974,11 +976,8 @@ def calc_seawater_w(ds):
 
     Eleanor's note: This could be bundled with calc_glider_w_from_depth, but keeping them separate allows for some extra testing/flexibility for the user. 
     """
-    # Check if 'VERT_GLIDER_SPEED' is in the dataset
-    if 'GLIDER_VERT_VELO_MODEL' not in ds:
-        print("Error: 'GLIDER_VERT_VELO_MODEL' is not in the dataset.")
-        return ds
-
+    _necessary_variables_check(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT'])
+    
     # Calculate the vertical seawater velocity
     vert_sw_speed = ds['GLIDER_VERT_VELO_DZDT'].values - ds['GLIDER_VERT_VELO_MODEL'].values 
 
@@ -1010,11 +1009,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     -------
     fig, axs (tuple): The figure and axes objects for the plot.
     """
-    required_vars = ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL']
-    for var in required_vars:
-        if var not in ds:
-            print(f"Dataset must contain '{var}' to create this plot.")
-            return
+    _necessary_variables_check(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL','PROFILE_NUMBER'])
 
     if start_prof is None:
         start_prof = int(ds['PROFILE_NUMBER'].values.mean())-10
@@ -1117,16 +1112,19 @@ def ramsey_binavg(ds, var='VERT_CURR', zgrid=None, dz=None):
     ----
     I know this is a non-sensical name.  We should re-name, but is based on advice from Ramsey Harcourt.
     """
-
+    _necessary_variables_check(ds, [var, 'PRES'])
     press = ds.PRES.values
     ww = ds[var].values
 
     # Calculate depth from pressure using gsw
     if 'DEPTH_Z' in ds:
         depth = ds.DEPTH_Z.values
-    else:
+    if:
         latmean = np.nanmean(ds.LATITUDE)
         depth = gsw.z_from_p(press, lat=latmean)  # Assuming latitude is 0, adjust as necessary
+    else: 
+        msg = f"DEPTH_Z and LATITUDE are missing. At least one of the two variables is needed."
+        raise KeyError(msg)
 
     if zgrid is None:
         if dz is None:
