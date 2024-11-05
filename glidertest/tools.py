@@ -140,7 +140,6 @@ def find_cline(var, depth_array):
     Find the depth of the maximum vertical difference for a specified variables
     Input data has to be gridded
     """
-    _necessary_variables_check(ds, [var])
     clin = np.where(np.abs(np.diff(np.nanmean(var, axis=0))) == np.nanmax(np.abs(np.diff(np.nanmean(var, axis=0)))))
     return np.round(depth_array[0, clin[0]], 1)
 
