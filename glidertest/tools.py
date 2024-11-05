@@ -1225,20 +1225,6 @@ def plot_combined_velocity_profiles(ds_out_dives, ds_out_climbs):
     w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
 
     fig, ax = plt.subplots(1, 1, figsize=(4.8, 4.8))
-
-    conv_factor = 100  # Convert m/s to cm/s
-    depth_negative = ds_out_dives.zgrid.values * -1
-    meanw_dives = ds_out_dives.meanw.values * conv_factor
-    zgrid_dives = depth_negative
-    w_lower_dives = ds_out_dives.w_lower.values * conv_factor
-    w_upper_dives = ds_out_dives.w_upper.values * conv_factor
-
-    meanw_climbs = ds_out_climbs.meanw.values * conv_factor
-    zgrid_climbs = ds_out_climbs.zgrid.values * -1
-    w_lower_climbs = ds_out_climbs.w_lower.values * conv_factor
-    w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
-
-    fig, ax = plt.subplots(1, 1, figsize=(4.8, 4.8))
     
     ax.xaxis.label.set_size(14)
     ax.yaxis.label.set_size(14)
