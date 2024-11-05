@@ -1225,12 +1225,10 @@ def plot_combined_velocity_profiles(ds_out_dives, ds_out_climbs):
     w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
 
     fig, ax = plt.subplots(1, 1, figsize=(4.8, 4.8))
-
-
+    
     ax.xaxis.label.set_size(14)
     ax.yaxis.label.set_size(14)
     ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.legend(fontsize=14)
 
     # Plot dives
     ax.fill_betweenx(zgrid_dives, w_lower_dives, w_upper_dives, color='black', alpha=0.3)
@@ -1245,8 +1243,8 @@ def plot_combined_velocity_profiles(ds_out_dives, ds_out_climbs):
     ax.set_xlabel('Vertical Velocity w (cm s$^{-1}$)')
     ax.set_ylabel('Depth (m)')
     ax.set_ylim(top=0, bottom=1000)  # Set y-limit maximum to zero
-    ax.legend()
-#    ax.set_title('Combined Vertical Velocity Profiles')
+    ax.legend(fontsize=14)
+    #ax.set_title('Combined Vertical Velocity Profiles')
 
     ax.set_xlim(-1, 1.5)
     ax.set_xticks([-1, -0.5, 0, 0.5, 1.0, 1.5])
