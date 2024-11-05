@@ -1119,7 +1119,7 @@ def ramsey_binavg(ds, var='VERT_CURR', zgrid=None, dz=None):
     # Calculate depth from pressure using gsw
     if 'DEPTH_Z' in ds:
         depth = ds.DEPTH_Z.values
-    if:
+    elif:
         latmean = np.nanmean(ds.LATITUDE)
         depth = gsw.z_from_p(press, lat=latmean)  # Assuming latitude is 0, adjust as necessary
     else: 
@@ -1206,7 +1206,6 @@ def plot_combined_velocity_profiles(ds_out_dives, ds_out_climbs):
     ----
     Assumes that the vertical velocities are in m/s and the depth grid is in meters.
     """
-
     conv_factor = 100  # Convert m/s to cm/s
     depth_negative = ds_out_dives.zgrid.values * -1
     meanw_dives = ds_out_dives.meanw.values * conv_factor
