@@ -1016,16 +1016,13 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
             print(f"Dataset must contain '{var}' to create this plot.")
             return
 
-    if start_prof is not None and end_prof is not None:
-        # Subset the dataset for the given profile range
-        ds = ds.where((ds['PROFILE_NUMBER'] >= start_prof) & (ds['PROFILE_NUMBER'] <= end_prof), drop=True)
-
     if start_prof is None:
-        start_prof = ds['PROFILE_NUMBER'].values.min()
+        start_prof = int(ds['PROFILE_NUMBER'].values.mean())-10
     
     if end_prof is None:
-        end_prof = ds['PROFILE_NUMBER'].values.max() 
-
+        end_prof = int(ds['PROFILE_NUMBER'].values.mean())+10
+        
+    ds = ds.where((ds['PROFILE_NUMBER'] >= start_prof) & (ds['PROFILE_NUMBER'] <= end_prof), drop=True)
     vert_curr = ds.VERT_CURR_MODEL.values * 100  # Convert to cm/s
     vert_dzdt = ds.GLIDER_VERT_VELO_DZDT.values * 100  # Convert to cm/s
     vert_model = ds.GLIDER_VERT_VELO_MODEL.values * 100  # Convert to cm/s
