@@ -18,7 +18,7 @@ def load_sample_dataset(dataset_name="sea045_20230530T0832_delayed.nc"):
     """Download sample datasets for use with glidertest
 
     Args:
-        dataset_name (str, optional): _description_. Defaults to "sea076_20230906T0852_delayed.nc".
+        dataset_name (str, optional): _description_. Defaults to "sea045_20230530T0832_delayed.nc".
 
     Raises:
         ValueError: If the requests dataset is not known, raises a value error
