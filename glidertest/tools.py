@@ -717,9 +717,6 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     # Add colorbar with formatted time labels
     cbar = plt.colorbar(sc, ax=ax) #, label='Time')
     cbar.ax.set_yticklabels([pd.to_datetime(t).strftime('%Y-%b-%d') for t in cbar.get_ticks()])
-    
-    #cbar.ax.set_yticks(cbar.get_ticks().tolist())
-    #cbar.ax.set_yticklabels([pd.to_datetime(t).strftime('%Y-%b-%d') for t in cbar.get_ticks()])
 
     ax.set_extent([np.min(longitudes)-1, np.max(longitudes)+1, np.min(latitudes)-1, np.max(latitudes)+1], crs=ccrs.PlateCarree())
 
