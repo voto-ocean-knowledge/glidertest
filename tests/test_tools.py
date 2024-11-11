@@ -2,6 +2,7 @@ import pytest
 from glidertest import fetchers, tools
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 
 def test_plots():
