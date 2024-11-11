@@ -5,9 +5,9 @@ import math
 import numpy as np
 
 
-def test_plots():
+def test_plots(start_prof=0, end_prof=100):
     ds = fetchers.load_sample_dataset()
-    fig, ax = tools.plot_basic_vars(ds,start_prof=0, end_prof=int(ds.PROFILE_NUMBER.max()))
+    fig, ax = tools.plot_basic_vars(ds,start_prof=start_prof, end_prof=end_prof)
     assert ax[0].get_ylabel() == 'Depth (m)'
     assert ax[0].get_xlabel() == f'Average Temperature [C] \nbetween profile {start_prof} and {end_prof}'
     return fig
