@@ -1026,27 +1026,34 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     vert_dzdt = ds.GLIDER_VERT_VELO_DZDT.values * 100  # Convert to cm/s
     vert_model = ds.GLIDER_VERT_VELO_MODEL.values * 100  # Convert to cm/s
 
+    # Create a dictionary to map the variable names to their labels for legends
+    labels_dict = {
+        'vert_dzdt': 'w$_{meas}$ (from dz/dt)',
+        'vert_model': 'w$_{model}$ (flight model)',
+        'vert_curr': 'w$_{sw}$ (calculated)'
+    }
 
     fig, axs = plt.subplots(2, 2, figsize=(14, 12), gridspec_kw={'width_ratios': [3, 1]})
 
     # Upper left subplot for vertical velocity and glider speed
     ax1 = axs[0, 0]
-    ax1.plot(ds['TIME'], vert_dzdt, label='Vertical Velocity (from dz/dt)')
+    ax1.plot(ds['TIME'], vert_dzdt, label=labels_dict['vert_dzdt'])
     ax1.set_xlabel('Time')
     ax1.set_ylabel('Vertical Velocity (cm/s)')
     ax1.legend(loc='lower left')
+    ax1.xaxis.set_major_formatter(DateFormatter('%d-%b'))
 
-    ax1.plot(ds['TIME'], vert_model, color='r', label='Vertical Glider Speed (model)')
+    ax1.plot(ds['TIME'], vert_model, color='r', label=labels_dict['vert_model'])
     ax1.legend(loc='lower left')
 
-    ax1.plot(ds['TIME'], vert_curr, color='g', label='Vertical Water Speed (calculated)')
+    ax1.plot(ds['TIME'], vert_curr, color='g', label=labels_dict['vert_curr'])
     ax1.legend(loc='lower right')
 
     # Upper right subplot for histogram of vertical velocity
     ax1_hist = axs[0, 1]
-    ax1_hist.hist(vert_dzdt, bins=50, orientation='horizontal', alpha=0.5, color='blue', label='Vertical Velocity (from dz/dt)')
-    ax1_hist.hist(vert_model, bins=50, orientation='horizontal', alpha=0.5, color='red', label='Vertical Glider Speed (model)')
-    ax1_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label='Vertical Water Speed (calculated)')
+    ax1_hist.hist(vert_dzdt, bins=50, orientation='horizontal', alpha=0.5, color='blue', label=labels_dict['vert_dzdt'])
+    ax1_hist.hist(vert_model, bins=50, orientation='horizontal', alpha=0.5, color='red', label=labels_dict['vert_model'])
+    ax1_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label=labels_dict['vert_curr'])
     ax1_hist.set_xlabel('Frequency')
 
     # Determine the best location for the legend based on the y-axis limits and zero
@@ -1063,14 +1070,15 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     # Lower left subplot for vertical water speed
     ax2 = axs[1, 0]
     ax2.axhline(0, color='darkgray', linestyle='-', linewidth=0.5)  # Add zero horizontal line
-    ax2.plot(ds['TIME'], vert_curr, 'g', label='Vertical Water Speed')
+    ax2.plot(ds['TIME'], vert_curr, 'g', label=labels_dict['vert_curr'])
     ax2.set_xlabel('Time')
     ax2.set_ylabel('Vertical Water Speed (cm/s)')
     ax2.legend(loc='upper left')
+    ax2.xaxis.set_major_formatter(DateFormatter('%d-%b'))
 
     # Lower right subplot for histogram of vertical water speed
     ax2_hist = axs[1, 1]
-    ax2_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label='Vertical Water Speed (calculated)')
+    ax2_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label=labels_dict['vert_curr'])
     ax2_hist.set_xlabel('Frequency')
 
     # Calculate and plot the median line
@@ -1088,6 +1096,30 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         legend_loc = 'lower right'
 
     ax2_hist.legend(loc=legend_loc)
+
+    # Set font sizes for all annotations
+    # Font size 14 looks roughly like fontsize 8 when I drop this figure in Word - a bit small
+    # Font size 14 looks like fontsize 13 when I drop the top *half* of this figure in powerpoint - acceptable
+    def_font_size = 14
+    ax1.xaxis.label.set_size(def_font_size)
+    ax1.yaxis.label.set_size(def_font_size)
+    ax1.legend(fontsize=def_font_size)
+    ax1.tick_params(axis='both', which='major', labelsize=def_font_size)
+
+    ax2.xaxis.label.set_size(def_font_size)
+    ax2.yaxis.label.set_size(def_font_size)
+    ax2.legend(fontsize=def_font_size)
+    ax2.tick_params(axis='both', which='major', labelsize=def_font_size)
+
+    ax1_hist.xaxis.label.set_size(def_font_size)
+    ax1_hist.yaxis.label.set_size(def_font_size)
+    ax1_hist.legend(fontsize=def_font_size)
+    ax1_hist.tick_params(axis='both', which='major', labelsize=def_font_size)
+
+    ax2_hist.xaxis.label.set_size(def_font_size)
+    ax2_hist.yaxis.label.set_size(def_font_size)
+    ax2_hist.legend(fontsize=def_font_size)
+    ax2_hist.tick_params(axis='both', which='major', labelsize=def_font_size)
 
     plt.tight_layout()
     plt.show()
