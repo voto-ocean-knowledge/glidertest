@@ -756,6 +756,9 @@ def plot_grid_spacing_histograms(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     else:
         fig = plt.gcf()
+    # Set font sizes for all annotations
+    def_font_size = 14
+
 
     depth_diff = np.diff(ds.DEPTH)
     orig_time_diff = np.diff(ds.TIME) / np.timedelta64(1, 's')  # Convert to seconds
@@ -783,8 +786,19 @@ def plot_grid_spacing_histograms(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict
         f'Max: {max_depth_diff:.2f} m\n'
         f'Min: {min_depth_diff:.2f} m'
     )
-    ax[0].annotate(annotation_text_left, xy=(0.96, 0.96), xycoords='axes fraction', 
-                   fontsize=12, ha='right', va='top', 
+    # Determine the best location for the annotation based on the x-axis limits
+    x_upper_limit = ax[0].get_xlim()[1]
+    x_lower_limit = ax[0].get_xlim()[0]
+
+    if abs(x_lower_limit) > abs(x_upper_limit):
+        annotation_loc = (0.04, 0.96)  # Top left
+        ha = 'left'
+    else:
+        annotation_loc = (0.96, 0.96)  # Top right
+        ha = 'right'
+
+    ax[0].annotate(annotation_text_left, xy=annotation_loc, xycoords='axes fraction', 
+                   fontsize=def_font_size, ha=ha, va='top', 
                    bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
 
     ax[1].hist(time_diff, bins=50, **kw)
@@ -806,8 +820,19 @@ def plot_grid_spacing_histograms(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict
         f'Min: {min_time_diff:.2f} s'
     )
     ax[1].annotate(annotation_text, xy=(0.96, 0.96), xycoords='axes fraction', 
-                    fontsize=12, ha='right', va='top', 
+                    fontsize=def_font_size, ha='right', va='top', 
                     bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
+
+
+    # Font size 14 looks roughly like fontsize 8 when I drop this figure in Word - a bit small
+    # Font size 14 looks like fontsize 13 when I drop the top *half* of this figure in powerpoint - acceptable
+    ax[0].xaxis.label.set_size(def_font_size)
+    ax[0].yaxis.label.set_size(def_font_size)
+    ax[0].tick_params(axis='both', which='major', labelsize=def_font_size)
+
+    ax[1].xaxis.label.set_size(def_font_size)
+    ax[1].yaxis.label.set_size(def_font_size)
+    ax[1].tick_params(axis='both', which='major', labelsize=def_font_size)
 
     return fig, ax
 
@@ -830,9 +855,12 @@ def plot_ts_histograms(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple
     _necessary_variables_check(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
 
     if ax is None:
-        fig, ax = plt.subplots(1, 3, figsize=(18, 6))
+        fig, ax = plt.subplots(1, 3, figsize=(14, 4.5))
     else:
         fig = plt.gcf()
+    # Set font sizes for all annotations
+    def_font_size = 14
+    num_bins = 30
 
     temp_orig = ds.TEMP.values
     sal_orig = ds.PSAL.values
@@ -847,41 +875,73 @@ def plot_ts_histograms(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple
     SA = gsw.SA_from_SP(sal, depth, long, lat)
     CT = gsw.CT_from_t(SA, temp, depth)
 
-    # Reduce to middle 95% of values
-    temp_filtered = CT[(CT >= np.nanpercentile(CT, 2.5)) & (CT <= np.nanpercentile(CT, 97.5))]
-    sal_filtered = SA[(SA >= np.nanpercentile(SA, 2.5)) & (SA <= np.nanpercentile(SA, 97.5))]
+    # Reduce to middle 99% of values
+    CT_filtered = CT[(CT >= np.nanpercentile(CT, .5)) & (CT <= np.nanpercentile(CT, 99.5))]
+    SA_filtered = SA[(SA >= np.nanpercentile(SA, .5)) & (SA <= np.nanpercentile(SA, 99.5))]
+    print('Temperature and Salinity values have been filtered to the middle 99% of values.')
 
-    ax[0].hist(temp_filtered, bins=50, **kw)
+    ax[0].hist(CT_filtered, bins=num_bins, **kw)
     ax[0].set_xlabel('Conservative Temperature (°C)')
     ax[0].set_ylabel('Frequency')
     ax[0].set_title('Histogram of Temperature')
     ax[0].grid()
+    ax[0].set_xlim(CT_filtered.min(), CT_filtered.max())
 
-    ax[1].hist(sal_filtered, bins=50, **kw)
+    ax[1].hist(SA_filtered, bins=num_bins, **kw)
     ax[1].set_xlabel('Absolute Salinity ( )')
     ax[1].set_ylabel('Frequency')
     ax[1].set_title('Histogram of Salinity')
     ax[1].grid()
+    ax[1].set_xlim(SA_filtered.min(), SA_filtered.max())
 
-    h = ax[2].hist2d(sal, temp, bins=50, cmap='viridis', norm=mcolors.LogNorm(), **kw)
+    h = ax[2].hist2d(SA_filtered, CT_filtered, bins=num_bins, cmap='viridis', norm=mcolors.LogNorm(), **kw)
     cbar = plt.colorbar(h[3], ax=ax[2])
     cbar.set_label('Log Counts')
     ax[2].set_xlabel('Absolute Salinity ( )')
     ax[2].set_ylabel('Conservative Temperature (°C)')
-    ax[2].set_title('2D Histogram of Salinity and Temperature (Log Scale)')
+    ax[2].set_title('2D Histogram (Log Scale)')
+    # Set x-limits based on salinity plot and y-limits based on temperature plot
+    ax[2].set_xlim(ax[1].get_xlim())
+    ax[2].set_ylim(ax[0].get_xlim())
 
     # Calculate density and add contours
-    SA = gsw.SA_from_SP(sal, depth, long, lat)
-    CT = gsw.CT_from_t(SA, temp, depth)
-    sigma0 = gsw.sigma0(SA, CT)
-
-    xi = np.linspace(sal.min()-1, sal.max()+1, 100)
-    yi = np.linspace(temp.min()-1, temp.max()+1, 100)
+    xi = np.linspace(SA_filtered.min()-.2, SA_filtered.max()+.2, 100)
+    yi = np.linspace(CT_filtered.min()-.2, CT_filtered.max()+.2, 100)
     xi, yi = np.meshgrid(xi, yi)
     zi = gsw.sigma0(xi, yi)
 
     ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5)
-    ax[2].clabel(ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5), inline=True, fontsize=10)
+    ax[2].clabel(ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5), inline=True, fontsize=def_font_size-2)
+
+    # Set font sizes for all annotations
+    ax[0].xaxis.label.set_size(def_font_size)
+    ax[0].yaxis.label.set_size(def_font_size)
+    ax[0].tick_params(axis='both', which='major', labelsize=def_font_size)
+
+    ax[1].xaxis.label.set_size(def_font_size)
+    ax[1].yaxis.label.set_size(def_font_size)
+    ax[1].tick_params(axis='both', which='major', labelsize=def_font_size)
+
+    ax[2].xaxis.label.set_size(def_font_size)
+    ax[2].yaxis.label.set_size(def_font_size)
+    ax[2].tick_params(axis='both', which='major', labelsize=def_font_size)
+
+
+    # Adjust the width of ax[1] to match the size of the frame of ax[2]
+    box1 = ax[1].get_position()
+    box2 = ax[2].get_position()
+    dw = box1.width-box2.width
+    ax[1].set_position([box1.x0+dw, box1.y0, box2.width, box1.height])
+    # Adjust the height of ax[2] to match the width of ax[0]
+    box0 = ax[0].get_position()
+    dh = box0.height - box2.height
+    ax[2].set_position([box2.x0, box2.y0 - dh, box2.width, box0.width])
+    # Adjust the height of ax[2] to match the width of ax[0]
+    box0 = ax[0].get_position()
+    box2 = ax[2].get_position()
+    fig_width, fig_height = fig.get_size_inches()
+    new_height = box0.width *  fig_width / fig_height
+    ax[2].set_position([box2.x0, box2.y0, box2.width, new_height])
 
     return fig, ax
 
@@ -1264,15 +1324,15 @@ def plot_combined_velocity_profiles(ds_out_dives, ds_out_climbs):
 
     # Plot dives
     ax.fill_betweenx(zgrid_dives, w_lower_dives, w_upper_dives, color='black', alpha=0.3)
-    ax.plot(meanw_dives, zgrid_dives, color='black', label='w$_d$')
+    ax.plot(meanw_dives, zgrid_dives, color='black', label='w$_{dive}$')
 
     # Plot climbs
     ax.fill_betweenx(zgrid_climbs, w_lower_climbs, w_upper_climbs, color='red', alpha=0.3)
-    ax.plot(meanw_climbs, zgrid_climbs, color='red', label='w$_c$')
+    ax.plot(meanw_climbs, zgrid_climbs, color='red', label='w$_{climb}$')
 
     ax.invert_yaxis()  # Invert y-axis to show depth increasing downwards
     ax.axvline(x=0, color='darkgray', linestyle='-', linewidth=0.5)  # Add vertical line through 0
-    ax.set_xlabel('Vertical Velocity w (cm s$^{-1}$)')
+    ax.set_xlabel('Vertical Velocity w$_{sw}$ (cm s$^{-1}$)')
     ax.set_ylabel('Depth (m)')
     ax.set_ylim(top=0, bottom=1000)  # Set y-limit maximum to zero
     ax.legend(fontsize=14)
