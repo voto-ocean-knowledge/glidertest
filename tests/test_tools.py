@@ -54,6 +54,7 @@ def test_quench_sequence(xlabel='Temperature [C]',ylim=45):
     assert ax.get_ylabel() == 'Depth [m]'
     assert ax.get_xlabel() == xlabel
 
+
 def test_temporal_drift(var='DOXY'):
     ds = fetchers.load_sample_dataset()
     fig, ax = plt.subplots(1, 2)
@@ -62,11 +63,13 @@ def test_temporal_drift(var='DOXY'):
     assert ax[0].get_ylabel() == var
     assert ax[1].get_xlim() == (np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99))
     tools.check_temporal_drift(ds,'CHLA')
-        
+
+
 def test_profile_check():
     ds = fetchers.load_sample_dataset()
     tools.check_monotony(ds.PROFILE_NUMBER)
     tools.plot_profIncrease(ds)
+
 
 def test_check_monotony():
     ds = fetchers.load_sample_dataset()
@@ -74,7 +77,14 @@ def test_check_monotony():
     temperature_monotony = tools.check_monotony(ds.TEMP)
     assert profile_number_monotony
     assert not temperature_monotony
-    
+
+
+def test_basic_statistics():
+    ds = fetchers.load_sample_dataset()
+    tools.plot_glider_track(ds)
+    tools.plot_grid_spacing_histograms(ds)
+    tools.plot_ts_histograms(ds)
+
 
 def test_vert_vel():
     ds_sg014 = fetchers.load_sample_dataset(dataset_name="sg014_20040924T182454_delayed_subset.nc")
@@ -86,5 +96,3 @@ def test_vert_vel():
     ds_out_dives = tools.ramsey_binavg(ds_dives, var = 'VERT_CURR_MODEL', dz=10)
     ds_out_climbs = tools.ramsey_binavg(ds_climbs, var = 'VERT_CURR_MODEL', dz=10)
     tools.plot_combined_velocity_profiles(ds_out_dives, ds_out_climbs)
-
-
