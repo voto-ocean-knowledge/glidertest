@@ -183,7 +183,7 @@ def calc_w_meas(ds):
     # Ensure inputs are numpy arrays
     time = ds.TIME.values
     if 'DEPTH_Z' not in ds.variables and all(var in ds.variables for var in ['PRES', 'LATITUDE', 'LONGITUDE']):
-        ds = calc_DEPTH_Z(ds)
+        ds = utilities.calc_DEPTH_Z(ds)
     depth = ds.DEPTH_Z.values
 
     # Calculate the centered differences in pressure and time, i.e. instead of using neighboring points, 
