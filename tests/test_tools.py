@@ -22,7 +22,7 @@ def test_up_down_bias(v_res=1, xlabel='Salinity'):
     bins = np.unique(np.round(ds.DEPTH,0))
     ncell = math.ceil(len(bins)/v_res)
     assert len(df) == ncell
-    tools.quant_updown_bias(df, ax,  xlabel=xlabel)
+    tools.plot_updown_bias(df, ax,  xlabel=xlabel)
     lims = np.abs(df.dc)
     assert ax.get_xlim() == (-np.nanpercentile(lims, 99.5), np.nanpercentile(lims, 99.5))
     assert ax.get_ylim() == (df.depth.max() + 1, -df.depth.max() / 30)
