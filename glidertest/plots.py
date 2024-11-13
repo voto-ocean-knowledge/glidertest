@@ -5,7 +5,6 @@ import pandas as pd
 import seaborn as sns
 import xarray as xr
 from matplotlib.dates import DateFormatter
-from pandas import DataFrame
 from scipy import stats
 import matplotlib.colors as mcolors
 import gsw
