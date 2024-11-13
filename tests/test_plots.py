@@ -1,11 +1,9 @@
 import pytest
-from glidertest import fetchers, tools, utilities, plots
+from glidertest import fetchers, tools, plots
 import matplotlib.pyplot as plt
-import math
 import numpy as np
 import matplotlib
 matplotlib.use('agg')  # use agg backend to prevent creating plot windows during tests
-
 
 def test_plots(start_prof=0, end_prof=100):
     ds = fetchers.load_sample_dataset()

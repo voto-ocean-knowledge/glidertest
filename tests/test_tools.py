@@ -1,20 +1,19 @@
 import pytest
 from glidertest import fetchers, tools
-import matplotlib.pyplot as plt
 import math
 import numpy as np
 import matplotlib
 matplotlib.use('agg')  # use agg backend to prevent creating plot windows during tests
 
 
-def test_updown_bias(v_res=1, xlabel='Salinity'):
+def test_updown_bias(v_res=1):
     ds = fetchers.load_sample_dataset()
     df = tools.quant_updown_bias(ds, var='PSAL', v_res=v_res)
     bins = np.unique(np.round(ds.DEPTH,0))
     ncell = math.ceil(len(bins)/v_res)
     assert len(df) == ncell
 
-def test_daynight(xlabel='Temperature [C]',ylim=45):
+def test_daynight():
     ds = fetchers.load_sample_dataset()
     if not "TIME" in ds.indexes.keys():
         ds = ds.set_xindex('TIME')
@@ -39,8 +38,7 @@ def test_vert_vel():
 
     ds_dives = ds_sg014.sel(N_MEASUREMENTS=ds_sg014.PHASE == 2)
     ds_climbs = ds_sg014.sel(N_MEASUREMENTS=ds_sg014.PHASE == 1)
-    ds_out_dives = tools.quant_binavg(ds_dives, var = 'VERT_CURR_MODEL', dz=10)
-    ds_out_climbs = tools.quant_binavg(ds_climbs, var = 'VERT_CURR_MODEL', dz=10)
+    tools.quant_binavg(ds_dives, var = 'VERT_CURR_MODEL', dz=10)
     
     # extra tests for ramsey calculations of DEPTH_Z
     ds_climbs = ds_climbs.drop_vars(['DEPTH_Z'])

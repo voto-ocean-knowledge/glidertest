@@ -1,18 +1,8 @@
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import xarray as xr
-from matplotlib.dates import DateFormatter
-from pandas import DataFrame
 from scipy import stats
-from skyfield import almanac
-from skyfield import api
-import matplotlib.colors as mcolors
 import gsw
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 import warnings
 from glidertest import utilities
 
@@ -55,7 +45,6 @@ def quant_updown_bias(ds, var='PSAL', v_res=1):
         df = pd.DataFrame()
     return df
 
-
 def compute_daynight_avg(ds, sel_var='CHLA', start_time=None, end_time=None, start_prof=None, end_prof=None):
     """
     This function computes night and day averages for a selected variable over a specific period of time or a specific series of dives
@@ -70,10 +59,10 @@ def compute_daynight_avg(ds, sel_var='CHLA', start_time=None, end_time=None, sta
     end_time: End date of the data selection. As missions can be long and can make it hard to visualise NPQ effect,
                 we recommend selecting small section of few days to a few weeks. Defaults to the central week of the deployment
     start_prof: Start profile of the data selection. If no profile is specified, the specified time selection will be used
-                or the the central week of the deployment.
+                or the central week of the deployment.
                 It is important to have a large enough number of dives to have some day and night data otherwise the function will not run
     end_prof:  End profile of the data selection. If no profile is specified, the specified time selection will be used
-            or the the central week of the deployment.
+            or the central week of the deployment.
     It is important to have a large enough number of dives to have some day and night data otherwise the function will not run
                 
     Returns

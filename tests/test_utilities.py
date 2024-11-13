@@ -1,8 +1,5 @@
 import pytest
 from glidertest import fetchers, utilities
-import matplotlib.pyplot as plt
-import math
-import numpy as np
 import matplotlib
 matplotlib.use('agg')  # use agg backend to prevent creating plot windows during tests
 
