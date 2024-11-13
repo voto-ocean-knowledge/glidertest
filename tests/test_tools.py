@@ -18,7 +18,7 @@ def test_plots(start_prof=0, end_prof=100):
 def test_up_down_bias(v_res=1, xlabel='Salinity'):
     ds = fetchers.load_sample_dataset()
     fig, ax = plt.subplots()
-    df = tools.compute_updown_bias(ds, var='PSAL', v_res=v_res)
+    df = tools.quant_updown_bias(ds, var='PSAL', v_res=v_res)
     bins = np.unique(np.round(ds.DEPTH,0))
     ncell = math.ceil(len(bins)/v_res)
     assert len(df) == ncell
@@ -75,7 +75,7 @@ def test_temporal_drift(var='DOXY'):
 def test_profile_check():
     ds = fetchers.load_sample_dataset()
     tools.check_monotony(ds.PROFILE_NUMBER)
-    tools.plot_profIncrease(ds)
+    tools.plot_prof_monotony(ds)
 
 
 def test_check_monotony():
@@ -100,15 +100,15 @@ def test_vert_vel():
     tools.plot_vertical_speeds_with_histograms(ds_sg014)
     ds_dives = ds_sg014.sel(N_MEASUREMENTS=ds_sg014.PHASE == 2)
     ds_climbs = ds_sg014.sel(N_MEASUREMENTS=ds_sg014.PHASE == 1)
-    ds_out_dives = tools.compute_ramsey_binavg(ds_dives, var = 'VERT_CURR_MODEL', dz=10)
-    ds_out_climbs = tools.compute_ramsey_binavg(ds_climbs, var = 'VERT_CURR_MODEL', dz=10)
+    ds_out_dives = tools.quant_binavg(ds_dives, var = 'VERT_CURR_MODEL', dz=10)
+    ds_out_climbs = tools.quant_binavg(ds_climbs, var = 'VERT_CURR_MODEL', dz=10)
     tools.plot_combined_velocity_profiles(ds_out_dives, ds_out_climbs)
     # extra tests for ramsey calculations of DEPTH_Z
     ds_climbs = ds_climbs.drop_vars(['DEPTH_Z'])
-    tools.compute_ramsey_binavg(ds_climbs, var='VERT_CURR_MODEL', dz=10)
+    tools.quant_binavg(ds_climbs, var='VERT_CURR_MODEL', dz=10)
     ds_climbs = ds_climbs.drop_vars(['LATITUDE'])
     with pytest.raises(KeyError) as e:
-        tools.compute_ramsey_binavg(ds_climbs, var='VERT_CURR_MODEL', dz=10)
+        tools.quant_binavg(ds_climbs, var='VERT_CURR_MODEL', dz=10)
 
 
 def test_depth_z():

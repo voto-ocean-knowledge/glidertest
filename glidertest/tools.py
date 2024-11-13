@@ -16,7 +16,7 @@ import cartopy.feature as cfeature
 import warnings
 
 
-def _necessary_variables_check(ds: xr.Dataset, vars: list):
+def _check_necessary_variables(ds: xr.Dataset, vars: list):
     """
     Checks that all of a list of variables are present in a dataset
 
@@ -45,7 +45,7 @@ def _calc_teos10_variables(ds):
     :param ds:
     :return:
     """
-    _necessary_variables_check(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'TEMP', 'PSAL'])
+    _check_necessary_variables(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'TEMP', 'PSAL'])
     if 'DENSITY' not in ds.variables:
         SA = gsw.SA_from_SP(ds.PSAL, ds.DEPTH, ds.LONGITUDE, ds.LATITUDE)
         CT = gsw.CT_from_t(SA, ds.TEMP, ds.DEPTH)
@@ -53,7 +53,7 @@ def _calc_teos10_variables(ds):
     return ds
 
 
-def compute_grid2d(x, y, v, xi=1, yi=1):
+def construct_2dgrid(x, y, v, xi=1, yi=1):
     """
     Function to grid data
     
@@ -90,7 +90,7 @@ def compute_grid2d(x, y, v, xi=1, yi=1):
     return grid, XI, YI
 
 
-def compute_updown_bias(ds, var='PSAL', v_res=1):
+def quant_updown_bias(ds, var='PSAL', v_res=1):
     """
     This function computes up and downcast averages for a specific variable
 
@@ -109,12 +109,12 @@ def compute_updown_bias(ds, var='PSAL', v_res=1):
     ----------------
     Chiara Monforte
     """
-    _necessary_variables_check(ds, ['PROFILE_NUMBER', 'DEPTH', var])
+    _check_necessary_variables(ds, ['PROFILE_NUMBER', 'DEPTH', var])
     p = 1  # Horizontal resolution
     z = v_res  # Vertical resolution
 
     if var in ds.variables:
-        varG, profG, depthG = compute_grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
+        varG, profG, depthG = construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
 
         grad = np.diff(varG, axis=0)  # Horizontal gradients
         with warnings.catch_warnings():
@@ -212,13 +212,13 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     ----------------
     Chiara Monforte
     """
-    _necessary_variables_check(ds, ['PROFILE_NUMBER', 'DEPTH', 'TEMP', 'PSAL', 'LATITUDE', 'LONGITUDE'])
+    _check_necessary_variables(ds, ['PROFILE_NUMBER', 'DEPTH', 'TEMP', 'PSAL', 'LATITUDE', 'LONGITUDE'])
     ds = _calc_teos10_variables(ds)
     p = 1
     z = v_res
-    tempG, profG, depthG = compute_grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z)
-    salG, profG, depthG = compute_grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z)
-    denG, profG, depthG = compute_grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z)
+    tempG, profG, depthG = construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z)
+    salG, profG, depthG = construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z)
+    denG, profG, depthG = construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z)
 
 
     tempG = tempG[start_prof:end_prof, :]
@@ -259,7 +259,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
         ax2.tick_params(axis='x', colors='black')
 
         if 'CHLA' in ds.variables:
-            chlaG, profG, depthG = compute_grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z)
+            chlaG, profG, depthG = construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z)
             chlaG = chlaG[start_prof:end_prof, :]
             ax2_1 = ax[1].twiny()
             ax2_1.plot(np.nanmean(chlaG, axis=0), depthG[0, :], c='green')
@@ -271,7 +271,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
             ax[1].text(0.3, 0.7, 'Chlorophyll data unavailable', va='top', transform=ax[1].transAxes)
 
         if 'DOXY' in ds.variables:
-            oxyG, profG, depthG = compute_grid2d(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z)
+            oxyG, profG, depthG = construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z)
             oxyG = oxyG[start_prof:end_prof, :]
             ax[1].plot(np.nanmean(oxyG, axis=0), depthG[0, :], c='orange')
             ax[1].set(xlabel=f'Average Oxygen [mmol m-3] \nbetween profile {start_prof} and {end_prof}')
@@ -305,7 +305,7 @@ def process_optics_assess(ds, var='CHLA'):
     ----------------
     Chiara Monforte
     """
-    _necessary_variables_check(ds, [var, 'TIME', 'DEPTH'])
+    _check_necessary_variables(ds, [var, 'TIME', 'DEPTH'])
     # Check how much negative data there is
     neg_chl = np.round((len(np.where(ds[var] < 0)[0]) * 100) / len(ds[var]), 1)
     if neg_chl > 0:
@@ -517,7 +517,7 @@ def compute_daynight_avg(ds, sel_var='CHLA', start_time=None, end_time=None, sta
     Chiara Monforte
 
     """
-    _necessary_variables_check(ds, ['TIME', sel_var, 'DEPTH'])
+    _check_necessary_variables(ds, ['TIME', sel_var, 'DEPTH'])
     if "TIME" not in ds.indexes.keys():
         ds = ds.set_xindex('TIME')
 
@@ -625,7 +625,7 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
     ----------------
     Chiara Monforte
     """
-    _necessary_variables_check(ds, ['TIME', sel_var, 'DEPTH'])
+    _check_necessary_variables(ds, ['TIME', sel_var, 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 5))
     else:
@@ -684,7 +684,7 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
     ----------------
     Chiara Monforte
     """
-    _necessary_variables_check(ds, ['TIME', var, 'DEPTH'])
+    _check_necessary_variables(ds, ['TIME', var, 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     else:
@@ -729,7 +729,7 @@ def check_monotony(da):
         return True
 
 
-def plot_profIncrease(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
+def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
 
     """
     This function can be used to plot the profile number and check for any possible issues with the profile index assigned.
@@ -750,7 +750,7 @@ def plot_profIncrease(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tupl
     Chiara Monforte
 
     """
-    _necessary_variables_check(ds, ['TIME', 'PROFILE_NUMBER', 'DEPTH'])
+    _check_necessary_variables(ds, ['TIME', 'PROFILE_NUMBER', 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
     else:
@@ -793,7 +793,7 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     ----------------
     Eleanor Frajka-Williams
     """
-    _necessary_variables_check(ds, ['TIME', 'LONGITUDE', 'LATITUDE'])
+    _check_necessary_variables(ds, ['TIME', 'LONGITUDE', 'LATITUDE'])
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={'projection': ccrs.PlateCarree()})
     else:
@@ -857,7 +857,7 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     ----------------
     Eleanor Frajka-Williams
     """
-    _necessary_variables_check(ds, ['TIME', 'DEPTH'])
+    _check_necessary_variables(ds, ['TIME', 'DEPTH'])
     if ax is None:
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     else:
@@ -965,7 +965,7 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
     ----------------
     Eleanor Frajka-Williams
     """
-    _necessary_variables_check(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
+    _check_necessary_variables(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
 
     if ax is None:
         fig, ax = plt.subplots(1, 3, figsize=(14, 4.5))
@@ -1070,7 +1070,7 @@ def calc_DEPTH_Z(ds):
     ----------------
     Eleanor Frajka-Williams
     """
-    _necessary_variables_check(ds, ['PRES', 'LONGITUDE', 'LATITUDE'])
+    _check_necessary_variables(ds, ['PRES', 'LONGITUDE', 'LATITUDE'])
 
     # Initialize the new variable with the same dimensions as dive_num
     ds['DEPTH_Z'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
@@ -1108,7 +1108,7 @@ def calc_w_meas(ds):
     ----------------
     Eleanor Frajka-Williams
     """
-    _necessary_variables_check(ds, ['TIME'])
+    _check_necessary_variables(ds, ['TIME'])
     # Ensure inputs are numpy arrays
     time = ds.TIME.values
     if 'DEPTH_Z' not in ds.variables and all(var in ds.variables for var in ['PRES', 'LATITUDE', 'LONGITUDE']):
@@ -1161,7 +1161,7 @@ def calc_w_sw(ds):
     Eleanor Frajka-Williams
     """
     # Eleanor's note: This could be bundled with calc_glider_w_from_depth, but keeping them separate allows for some extra testing/flexibility for the user. 
-    _necessary_variables_check(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT'])
+    _check_necessary_variables(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT'])
     
     # Calculate the vertical seawater velocity
     vert_sw_speed = ds['GLIDER_VERT_VELO_DZDT'].values - ds['GLIDER_VERT_VELO_MODEL'].values 
@@ -1198,7 +1198,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     ----------------
     Eleanor Frajka-Williams
     """
-    _necessary_variables_check(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL','PROFILE_NUMBER'])
+    _check_necessary_variables(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL','PROFILE_NUMBER'])
 
     if start_prof is None:
         start_prof = int(ds['PROFILE_NUMBER'].values.mean())-10
@@ -1324,7 +1324,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
 
     return fig, axs
 
-def compute_ramsey_binavg(ds, var='VERT_CURR', zgrid=None, dz=None):
+def quant_binavg(ds, var='VERT_CURR', zgrid=None, dz=None):
     """
     Calculate the bin average of vertical velocities within specified depth ranges.
     This function computes the bin average of all vertical velocities within depth ranges,
@@ -1350,7 +1350,7 @@ def compute_ramsey_binavg(ds, var='VERT_CURR', zgrid=None, dz=None):
     ----------------
     Eleanor Frajka-Williams
     """
-    _necessary_variables_check(ds, [var, 'PRES'])
+    _check_necessary_variables(ds, [var, 'PRES'])
     press = ds.PRES.values
     ww = ds[var].values
 
