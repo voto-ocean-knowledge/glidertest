@@ -862,26 +862,41 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     else:
         fig = plt.gcf()
+    # Set font sizes for all annotations
+    def_font_size = 14
 
+    # Calculate the depth and time differences
     depth_diff = np.diff(ds.DEPTH)
     orig_time_diff = np.diff(ds.TIME) / np.timedelta64(1, 's')  # Convert to seconds
 
+    # Remove NaN values
     depth_diff = depth_diff[np.isfinite(depth_diff)]
     time_diff = orig_time_diff[np.isfinite(orig_time_diff)]
 
-    depth_diff = depth_diff[(depth_diff >= np.nanpercentile(depth_diff, 0.5)) & (depth_diff <= np.nanpercentile(depth_diff, 99.5))]
-    time_diff = time_diff[(time_diff >= np.nanpercentile(time_diff, 0.5)) & (time_diff <= np.nanpercentile(time_diff, 99.5))]
-
-    ax[0].hist(depth_diff, bins=50, **kw)
-    ax[0].set_xlabel('Depth Spacing (m)')
-    ax[0].set_ylabel('Frequency')
-    ax[0].set_title('Histogram of Depth Spacing')
-    ax[0].grid()
-
+    # Calculate some statistics (using original data)
     median_neg_depth_diff = np.median(depth_diff[depth_diff < 0])
     median_pos_depth_diff = np.median(depth_diff[depth_diff > 0])
     max_depth_diff = np.max(depth_diff)
     min_depth_diff = np.min(depth_diff)
+
+    median_time_diff = np.median(orig_time_diff)
+    mean_time_diff = np.mean(orig_time_diff)
+    max_time_diff = np.max(orig_time_diff)
+    min_time_diff = np.min(orig_time_diff)
+    max_time_diff_hrs = max_time_diff/3600
+
+    # Remove the top and bottom 0.5% of values to get a better histogram
+    # This is hiding some data from the user
+    depth_diff = depth_diff[(depth_diff >= np.nanpercentile(depth_diff, 0.5)) & (depth_diff <= np.nanpercentile(depth_diff, 99.5))]
+    time_diff = time_diff[(time_diff >= np.nanpercentile(time_diff, 0.5)) & (time_diff <= np.nanpercentile(time_diff, 99.5))]
+    print('Depth and time differences have been filtered to the middle 99% of values.')
+    print('Numeric median/mean/max/min values are based on the original data.')
+
+    # Histogram of depth spacing
+    ax[0].hist(depth_diff, bins=50, **kw)
+    ax[0].set_xlabel('Depth Spacing (m)')
+    ax[0].set_ylabel('Frequency')
+    ax[0].set_title('Histogram of Depth Spacing')
 
     annotation_text_left = (
         f'Median Negative: {median_neg_depth_diff:.2f} m\n'
@@ -889,21 +904,24 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         f'Max: {max_depth_diff:.2f} m\n'
         f'Min: {min_depth_diff:.2f} m'
     )
-    ax[0].annotate(annotation_text_left, xy=(0.96, 0.96), xycoords='axes fraction', 
-                   fontsize=12, ha='right', va='top', 
+    # Determine the best location for the annotation based on the x-axis limits
+    x_upper_limit = ax[0].get_xlim()[1]
+    x_lower_limit = ax[0].get_xlim()[0]
+    if abs(x_lower_limit) > abs(x_upper_limit):
+        annotation_loc = (0.04, 0.96)  # Top left
+        ha = 'left'
+    else:
+        annotation_loc = (0.96, 0.96)  # Top right
+        ha = 'right'
+    ax[0].annotate(annotation_text_left, xy=annotation_loc, xycoords='axes fraction', 
+                   fontsize=def_font_size, ha=ha, va='top', 
                    bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
 
+    # Histogram of time spacing
     ax[1].hist(time_diff, bins=50, **kw)
     ax[1].set_xlabel('Time Spacing (s)')
     ax[1].set_ylabel('Frequency')
     ax[1].set_title('Histogram of Time Spacing')
-    ax[1].grid()
-
-    median_time_diff = np.median(orig_time_diff)
-    mean_time_diff = np.mean(orig_time_diff)
-    max_time_diff = np.max(orig_time_diff)
-    min_time_diff = np.min(orig_time_diff)
-    max_time_diff_hrs = max_time_diff/3600
 
     annotation_text = (
         f'Median: {median_time_diff:.2f} s\n'
@@ -912,8 +930,18 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         f'Min: {min_time_diff:.2f} s'
     )
     ax[1].annotate(annotation_text, xy=(0.96, 0.96), xycoords='axes fraction', 
-                    fontsize=12, ha='right', va='top', 
+                    fontsize=def_font_size, ha='right', va='top', 
                     bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
+
+    # Set font sizes for all annotations
+    # Font size 14 looks roughly like fontsize 8 when I drop this figure in Word - a bit small
+    # Font size 14 looks like fontsize 13 when I drop the top *half* of this figure in powerpoint - acceptable
+    for axes in ax:
+        axes.xaxis.label.set_size(def_font_size)
+        axes.yaxis.label.set_size(def_font_size)
+        axes.tick_params(axis='both', which='major', labelsize=def_font_size)
+        # More subtle grid lines
+        axes.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
 
     return fig, ax
 
@@ -940,9 +968,12 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
     _necessary_variables_check(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
 
     if ax is None:
-        fig, ax = plt.subplots(1, 3, figsize=(18, 6))
+        fig, ax = plt.subplots(1, 3, figsize=(14, 4.5))
     else:
         fig = plt.gcf()
+    # Set font sizes for all annotations
+    def_font_size = 14
+    num_bins = 30
 
     temp_orig = ds.TEMP.values
     sal_orig = ds.PSAL.values
@@ -957,41 +988,68 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
     SA = gsw.SA_from_SP(sal, depth, long, lat)
     CT = gsw.CT_from_t(SA, temp, depth)
 
-    # Reduce to middle 95% of values
-    temp_filtered = CT[(CT >= np.nanpercentile(CT, 2.5)) & (CT <= np.nanpercentile(CT, 97.5))]
-    sal_filtered = SA[(SA >= np.nanpercentile(SA, 2.5)) & (SA <= np.nanpercentile(SA, 97.5))]
+    # Reduce to middle 99% of values
+    # This helps a lot for plotting, but is also hiding some of the data (not great for a test)
+    CT_filtered = CT[(CT >= np.nanpercentile(CT, .5)) & (CT <= np.nanpercentile(CT, 99.5))]
+    SA_filtered = SA[(SA >= np.nanpercentile(SA, .5)) & (SA <= np.nanpercentile(SA, 99.5))]
+    print('Temperature and Salinity values have been filtered to the middle 99% of values.')
 
-    ax[0].hist(temp_filtered, bins=50, **kw)
+    # Calculate density to add contours
+    xi = np.linspace(SA_filtered.values.min()-.2, SA_filtered.values.max()+.2, 100)
+    yi = np.linspace(CT_filtered.values.min()-.2, CT_filtered.values.max()+.2, 100)
+    xi, yi = np.meshgrid(xi, yi)
+    zi = gsw.sigma0(xi, yi)
+
+    # Temperature histogram
+    ax[0].hist(CT_filtered, bins=num_bins, **kw)
     ax[0].set_xlabel('Conservative Temperature (°C)')
     ax[0].set_ylabel('Frequency')
     ax[0].set_title('Histogram of Temperature')
-    ax[0].grid()
+    ax[0].set_xlim(CT_filtered.min(), CT_filtered.max())
 
-    ax[1].hist(sal_filtered, bins=50, **kw)
+    # Salinity histogram
+    ax[1].hist(SA_filtered, bins=num_bins, **kw)
     ax[1].set_xlabel('Absolute Salinity ( )')
     ax[1].set_ylabel('Frequency')
     ax[1].set_title('Histogram of Salinity')
-    ax[1].grid()
+    ax[1].set_xlim(SA_filtered.min(), SA_filtered.max())
 
-    h = ax[2].hist2d(sal, temp, bins=50, cmap='viridis', norm=mcolors.LogNorm(), **kw)
+    # 2-d T-S histogram
+    h = ax[2].hist2d(SA_filtered, CT_filtered, bins=num_bins, cmap='viridis', norm=mcolors.LogNorm(), **kw)
+    ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5)
+    ax[2].clabel(ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5), inline=True, fontsize=def_font_size-2)
     cbar = plt.colorbar(h[3], ax=ax[2])
     cbar.set_label('Log Counts')
     ax[2].set_xlabel('Absolute Salinity ( )')
     ax[2].set_ylabel('Conservative Temperature (°C)')
-    ax[2].set_title('2D Histogram of Salinity and Temperature (Log Scale)')
+    ax[2].set_title('2D Histogram (Log Scale)')
+    # Set x-limits based on salinity plot and y-limits based on temperature plot
+    ax[2].set_xlim(ax[1].get_xlim())
+    ax[2].set_ylim(ax[0].get_xlim())
 
-    # Calculate density and add contours
-    SA = gsw.SA_from_SP(sal, depth, long, lat)
-    CT = gsw.CT_from_t(SA, temp, depth)
-    sigma0 = gsw.sigma0(SA, CT)
+    # Set font sizes for all annotations
+    for axes in ax:
+        axes.xaxis.label.set_size(def_font_size)
+        axes.yaxis.label.set_size(def_font_size)
+        axes.tick_params(axis='both', which='major', labelsize=def_font_size)
+        axes.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
 
-    xi = np.linspace(sal.min()-1, sal.max()+1, 100)
-    yi = np.linspace(temp.min()-1, temp.max()+1, 100)
-    xi, yi = np.meshgrid(xi, yi)
-    zi = gsw.sigma0(xi, yi)
 
-    ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5)
-    ax[2].clabel(ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5), inline=True, fontsize=10)
+    # Adjust the width of ax[1] to match the size of the frame of ax[2]
+    box1 = ax[1].get_position()
+    box2 = ax[2].get_position()
+    dw = box1.width-box2.width
+    ax[1].set_position([box1.x0+dw, box1.y0, box2.width, box1.height])
+    # Adjust the height of ax[2] to match the width of ax[0]
+    box0 = ax[0].get_position()
+    dh = box0.height - box2.height
+    ax[2].set_position([box2.x0, box2.y0 - dh, box2.width, box0.width])
+    # Adjust the height of ax[2] to match the width of ax[0]
+    box0 = ax[0].get_position()
+    box2 = ax[2].get_position()
+    fig_width, fig_height = fig.get_size_inches()
+    new_height = box0.width *  fig_width / fig_height
+    ax[2].set_position([box2.x0, box2.y0, box2.width, new_height])
 
     return fig, ax
 
@@ -1102,6 +1160,7 @@ def calc_w_sw(ds):
     ----------------
     Eleanor Frajka-Williams
     """
+    # Eleanor's note: This could be bundled with calc_glider_w_from_depth, but keeping them separate allows for some extra testing/flexibility for the user. 
     _necessary_variables_check(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT'])
     
     # Calculate the vertical seawater velocity
@@ -1152,70 +1211,115 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     vert_dzdt = ds.GLIDER_VERT_VELO_DZDT.values * 100  # Convert to cm/s
     vert_model = ds.GLIDER_VERT_VELO_MODEL.values * 100  # Convert to cm/s
 
+    # Calculate the median line for the lower right histogram
+    median_vert_sw_speed = np.nanmedian(vert_curr)
+
+    # Create a dictionary to map the variable names to their labels for legends
+    labels_dict = {
+        'vert_dzdt': 'w$_{meas}$ (from dz/dt)',
+        'vert_model': 'w$_{model}$ (flight model)',
+        'vert_curr': 'w$_{sw}$ (calculated)'
+    }
 
     fig, axs = plt.subplots(2, 2, figsize=(14, 12), gridspec_kw={'width_ratios': [3, 1]})
 
     # Upper left subplot for vertical velocity and glider speed
     ax1 = axs[0, 0]
-    ax1.plot(ds['TIME'], vert_dzdt, label='Vertical Velocity (from dz/dt)')
+    ax1.axhline(0, color='gray', linestyle='-', linewidth=0.5)  # Add zero horizontal line
+    ax1.plot(ds['TIME'], vert_dzdt, label=labels_dict['vert_dzdt'])
+    ax1.plot(ds['TIME'], vert_model, color='r', label=labels_dict['vert_model'])
+    ax1.plot(ds['TIME'], vert_curr, color='g', label=labels_dict['vert_curr'])
+    # Annotations
     ax1.set_xlabel('Time')
     ax1.set_ylabel('Vertical Velocity (cm/s)')
     ax1.legend(loc='lower left')
-
-    ax1.plot(ds['TIME'], vert_model, color='r', label='Vertical Glider Speed (model)')
-    ax1.legend(loc='lower left')
-
-    ax1.plot(ds['TIME'], vert_curr, color='g', label='Vertical Water Speed (calculated)')
+    ax1.xaxis.set_major_formatter(DateFormatter('%d-%b'))
     ax1.legend(loc='lower right')
 
     # Upper right subplot for histogram of vertical velocity
     ax1_hist = axs[0, 1]
-    ax1_hist.hist(vert_dzdt, bins=50, orientation='horizontal', alpha=0.5, color='blue', label='Vertical Velocity (from dz/dt)')
-    ax1_hist.hist(vert_model, bins=50, orientation='horizontal', alpha=0.5, color='red', label='Vertical Glider Speed (model)')
-    ax1_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label='Vertical Water Speed (calculated)')
+    ax1_hist.hist(vert_dzdt, bins=50, orientation='horizontal', alpha=0.5, color='blue', label=labels_dict['vert_dzdt'])
+    ax1_hist.hist(vert_model, bins=50, orientation='horizontal', alpha=0.5, color='red', label=labels_dict['vert_model'])
+    ax1_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label=labels_dict['vert_curr'])
     ax1_hist.set_xlabel('Frequency')
 
     # Determine the best location for the legend based on the y-axis limits and zero
     y_upper_limit = ax1_hist.get_ylim()[1]
     y_lower_limit = ax1_hist.get_ylim()[0]
-
     if abs(y_upper_limit) > abs(y_lower_limit):
         legend_loc = 'upper right'
     else:
         legend_loc = 'lower right'
-
     ax1_hist.legend(loc=legend_loc)
 
     # Lower left subplot for vertical water speed
     ax2 = axs[1, 0]
-    ax2.axhline(0, color='darkgray', linestyle='-', linewidth=0.5)  # Add zero horizontal line
-    ax2.plot(ds['TIME'], vert_curr, 'g', label='Vertical Water Speed')
+    ax2.axhline(0, color='gray', linestyle='-', linewidth=0.5)  # Add zero horizontal line
+    ax2.plot(ds['TIME'], vert_curr, 'g', label=labels_dict['vert_curr'])
+    # Annotations
     ax2.set_xlabel('Time')
     ax2.set_ylabel('Vertical Water Speed (cm/s)')
     ax2.legend(loc='upper left')
+    ax2.xaxis.set_major_formatter(DateFormatter('%d-%b'))
 
     # Lower right subplot for histogram of vertical water speed
     ax2_hist = axs[1, 1]
-    ax2_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label='Vertical Water Speed (calculated)')
-    ax2_hist.set_xlabel('Frequency')
-
-    # Calculate and plot the median line
-    median_vert_sw_speed = np.nanmedian(vert_curr)
+    ax2_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label=labels_dict['vert_curr'])
     ax2_hist.axhline(median_vert_sw_speed, color='red', linestyle='dashed', linewidth=1, label=f'Median: {median_vert_sw_speed:.2f} cm/s')
+    ax2_hist.set_xlabel('Frequency')
 
     # Determine the best location for the legend based on the y-axis limits and median
     y_upper_limit = ax2_hist.get_ylim()[1]
     y_lower_limit = ax2_hist.get_ylim()[0]
-    median_vert_sw_speed = np.nanmedian(vert_curr)
-
     if abs(y_upper_limit - median_vert_sw_speed) > abs(y_lower_limit - median_vert_sw_speed):
         legend_loc = 'upper right'
     else:
         legend_loc = 'lower right'
-
     ax2_hist.legend(loc=legend_loc)
 
-    plt.tight_layout()
+    # Set font sizes for all annotations
+    # Font size 14 looks roughly like fontsize 8 when I drop this figure in Word - a bit small
+    # Font size 14 looks like fontsize 13 when I drop the top *half* of this figure in powerpoint - acceptable
+    def_font_size = 14
+    for ax in [ax1, ax2, ax1_hist, ax2_hist]:
+        ax.yaxis.label.set_size(def_font_size)
+        ax.legend(fontsize=def_font_size)
+        ax.tick_params(axis='both', which='major', labelsize=def_font_size)
+        ax.xaxis.label.set_size(def_font_size)
+
+    # Adjust the axes so that the distance between y-ticks on the top and lower panel is the same
+    # Get the y-axis range of the top left plot
+    y1_range = ax1.get_ylim()[1] - ax1.get_ylim()[0]
+    # Get the y-axis limits of the lower left plot
+    y2_range = ax2.get_ylim()[1] - ax2.get_ylim()[0]
+    # Get the height in inches of the top left plot
+    box1 = ax1.get_position()
+    height1 = box1.height
+    # Get the height in inches of the lower left plot
+    box2 = ax2.get_position()
+    height2 = box2.height
+    # Set a scaled height for the lower left plot
+    new_height = height1 * y2_range / y1_range
+    # Determine the change in height
+    height_change = height2 - new_height
+    # Shift the y-position of the lower left plot by the change in height
+    ax2.set_position([box2.x0, box2.y0 + height_change, box2.width, new_height])
+
+    # Get the position of the lower right plot
+    box2_hist = ax2_hist.get_position()
+    # Adjust the position of the lower right plot to match the height of the lower left plot
+    ax2_hist.set_position([box2_hist.x0, box2_hist.y0 + height_change, box2_hist.width, new_height])
+
+    # Find the distance between the right edge of the top left plot and the left edge of the top right plot
+    box1_hist = ax1_hist.get_position()
+    distance =  box1_hist.x0 - (box1.x0 + box1.width)
+    shift_dist = distance/3 # Not sure this will always work; it may depend on the def_fault_size
+    # Adjust the width of the top right plot to extend left by half the distance
+    ax1_hist.set_position([box1_hist.x0 - shift_dist, box1_hist.y0, box1_hist.width + shift_dist, box1_hist.height])
+    # Adjust the width of the bottom right plot to extend left by half the distance
+    box2_hist = ax2_hist.get_position()
+    ax2_hist.set_position([box2_hist.x0 - shift_dist, box2_hist.y0, box2_hist.width + shift_dist, box2_hist.height])
+
     plt.show()
 
     return fig, axs
@@ -1366,15 +1470,15 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
 
     # Plot dives
     ax.fill_betweenx(zgrid_dives, w_lower_dives, w_upper_dives, color='black', alpha=0.3)
-    ax.plot(meanw_dives, zgrid_dives, color='black', label='w$_d$')
+    ax.plot(meanw_dives, zgrid_dives, color='black', label='w$_{dive}$')
 
     # Plot climbs
     ax.fill_betweenx(zgrid_climbs, w_lower_climbs, w_upper_climbs, color='red', alpha=0.3)
-    ax.plot(meanw_climbs, zgrid_climbs, color='red', label='w$_c$')
+    ax.plot(meanw_climbs, zgrid_climbs, color='red', label='w$_{climb}$')
 
     ax.invert_yaxis()  # Invert y-axis to show depth increasing downwards
     ax.axvline(x=0, color='darkgray', linestyle='-', linewidth=0.5)  # Add vertical line through 0
-    ax.set_xlabel('Vertical Velocity w (cm s$^{-1}$)')
+    ax.set_xlabel('Vertical Velocity w$_{sw}$ (cm s$^{-1}$)')
     ax.set_ylabel('Depth (m)')
     ax.set_ylim(top=0, bottom=1000)  # Set y-limit maximum to zero
     ax.legend(fontsize=14)
