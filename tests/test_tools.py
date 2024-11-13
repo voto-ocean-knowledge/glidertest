@@ -33,7 +33,7 @@ def test_check_monotony():
 
 def test_vert_vel():
     ds_sg014 = fetchers.load_sample_dataset(dataset_name="sg014_20040924T182454_delayed_subset.nc")
-    ds_sg014.drop_vars("DEPTH_Z")
+    ds_sg014 = ds_sg014.drop_vars("DEPTH_Z")
     ds_sg014 = tools.calc_w_meas(ds_sg014)
     ds_sg014 = tools.calc_w_sw(ds_sg014)
 
