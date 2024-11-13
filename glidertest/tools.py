@@ -160,41 +160,6 @@ def check_monotony(da):
         print(f'{da.name} is always monotonically increasing')
         return True
 
-def calc_DEPTH_Z(ds):
-    """
-    Calculate the depth (Z position) of the glider using the gsw library to convert pressure to depth.
-    
-    Parameters
-    ----------
-    ds (xarray.Dataset): The input dataset containing 'PRES', 'LATITUDE', and 'LONGITUDE' variables.
-    
-    Returns
-    -------
-    xarray.Dataset: The dataset with an additional 'DEPTH_Z' variable.
-
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
-    """
-    utilities._check_necessary_variables(ds, ['PRES', 'LONGITUDE', 'LATITUDE'])
-
-    # Initialize the new variable with the same dimensions as dive_num
-    ds['DEPTH_Z'] = (['N_MEASUREMENTS'], np.full(ds.dims['N_MEASUREMENTS'], np.nan))
-
-    # Calculate depth using gsw
-    depth = gsw.z_from_p(ds['PRES'], ds['LATITUDE'])
-    ds['DEPTH_Z'] = depth
-
-    # Assign the calculated depth to a new variable in the dataset
-    ds['DEPTH_Z'].attrs = {
-        "units": "meters",
-        "positive": "up",
-        "standard_name": "depth",
-        "comment": "Depth calculated from pressure using gsw library, positive up.",
-    }
-    
-    return ds
-
 def calc_w_meas(ds):
     """
     Calculate the vertical velocity of a glider using changes in pressure with time.
