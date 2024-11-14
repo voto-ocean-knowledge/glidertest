@@ -18,4 +18,3 @@ sphinx-rtd-theme
 cartopy
 gsw
 os
-warnings
