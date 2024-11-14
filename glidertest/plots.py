@@ -15,7 +15,7 @@ from glidertest import utilities
 import os
 
 dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
+glidertest_style_file = f"{dir}/glidertest.mplstyle"
 
 def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
@@ -35,7 +35,7 @@ def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature 
     ----------------
     Chiara Monforte
     """
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots()
         else:
@@ -97,7 +97,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     pycno = utilities.compute_cline(denG, depthG)
     print(
         f'The thermocline, halocline and pycnocline are located at respectively {thermo}, {halo} and {pycno}m as shown in the plots as well')
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             fig, ax = plt.subplots(1, 2)
@@ -195,7 +195,7 @@ def process_optics_assess(ds, var='CHLA'):
     bottom_opt_data = ds[var].where(ds[var].DEPTH > ds.DEPTH.max() - (ds.DEPTH.max() * 0.1)).dropna(
         dim='N_MEASUREMENTS')
     slope, intercept, r_value, p_value, std_err = stats.linregress(np.arange(0, len(bottom_opt_data)), bottom_opt_data)
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         ax = sns.regplot(data=ds, x=np.arange(0, len(bottom_opt_data)), y=bottom_opt_data,
                          scatter_kws={"color": "grey"},
                          line_kws={"color": "red", "label": "y={0:.8f}x+{1:.5f}".format(slope, intercept)},
@@ -244,7 +244,7 @@ def plot_daynight_avg(day: pd.DataFrame, night: pd.DataFrame, ax: plt.Axes = Non
         dates = list(day.date.dropna().values) + list(night.date.dropna().values)
         dates.sort()
         sel_day = dates[int(len(dates)/2)]
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots()
         else:
@@ -289,7 +289,7 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
     Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['TIME', sel_var, 'DEPTH'])
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots()
         else:
@@ -349,7 +349,7 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
     Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['TIME', var, 'DEPTH'])
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(1, 2)
         else:
@@ -390,7 +390,7 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
 
     """
     utilities._check_necessary_variables(ds, ['TIME', 'PROFILE_NUMBER', 'DEPTH'])
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(2, 1, sharex=True)
         else:
@@ -435,7 +435,7 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['TIME', 'LONGITUDE', 'LATITUDE'])
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
         else:
@@ -497,7 +497,7 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['TIME', 'DEPTH'])
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(1, 2)
         else:
@@ -604,7 +604,7 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
     Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(1, 3)
         else:
@@ -716,7 +716,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL','PROFILE_NUMBER'])
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         if start_prof is None:
             start_prof = int(ds['PROFILE_NUMBER'].values.mean())-10
 
@@ -871,7 +871,7 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
     zgrid_climbs = ds_out_climbs.zgrid.values * -1
     w_lower_climbs = ds_out_climbs.w_lower.values * conv_factor
     w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
-    with plt.style.context('glidertest.mplstyle'):
+    with plt.style.context(glidertest_style_file):
         fig, ax = plt.subplots(1, 1)
 
         ax.tick_params(axis='both', which='major')
