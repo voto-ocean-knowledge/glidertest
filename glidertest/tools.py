@@ -6,7 +6,9 @@ import gsw
 import warnings
 from glidertest import utilities
 
-
+def ci_trigger():
+    print("this should trigger the ci")
+    
 def quant_updown_bias(ds, var='PSAL', v_res=1):
     """
     This function computes up and downcast averages for a specific variable
