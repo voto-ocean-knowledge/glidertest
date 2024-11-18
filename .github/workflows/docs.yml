@@ -44,7 +44,7 @@ jobs:
         popd
 
     - name: Deploy
-      if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+      if: github.event.pull_request.merged == true
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
